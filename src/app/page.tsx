@@ -24,7 +24,7 @@ export default function LandingPage() {
                      focus-visible:ring-amber focus-visible:ring-offset-2
                      focus-visible:ring-offset-ivory"
         >
-          Book now
+          Записаться
         </Link>
       </header>
 
@@ -33,18 +33,18 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <h1 className="text-espresso font-bold tracking-tight
                          text-4xl sm:text-5xl leading-tight max-w-2xl">
-            Book your next cut in seconds.
+            Запишитесь на стрижку за несколько секунд.
           </h1>
           <p className="text-espresso/70 text-base mt-4 max-w-md">
-            Choose a service, pick a time, and you&apos;re set &mdash; no account,
-            no waiting on hold.
+            Выберите услугу и время — и всё готово. Без регистрации
+            и без ожидания на телефоне.
           </p>
 
           {/* Next open slot — single primary CTA per screen */}
           <div className="mt-10 bg-sand rounded-2xl border border-walnut/40 shadow-md p-6 sm:p-8 max-w-md">
-            <p className="text-espresso/70 text-sm">Next open slot</p>
+            <p className="text-espresso/70 text-sm">Ближайшее свободное время</p>
             <NextOpenSlot />
-            <p className="text-espresso/70 text-sm mt-1">~45 min · no wait</p>
+            <p className="text-espresso/70 text-sm mt-1">~45 мин · без ожидания</p>
 
             <Link
               href="/booking"
@@ -56,7 +56,7 @@ export default function LandingPage() {
                          focus-visible:ring-amber focus-visible:ring-offset-2
                          focus-visible:ring-offset-sand"
             >
-              Reserve this slot
+              Забронировать это время
             </Link>
           </div>
         </div>
@@ -66,13 +66,13 @@ export default function LandingPage() {
       <section className="px-6 sm:px-10 pb-20">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-espresso text-2xl font-semibold tracking-tight mb-6">
-            Services
+            Услуги
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {SERVICES.map((s) => (
               <div key={s.id} className="bg-sand rounded-2xl border border-walnut/40 shadow-md p-6 flex flex-col">
                 <p className="text-espresso text-base font-medium">{s.name}</p>
-                <p className="text-espresso/70 text-sm mt-1">{s.duration} min</p>
+                <p className="text-espresso/70 text-sm mt-1">{s.duration} мин</p>
                 <p className="text-amber text-2xl font-bold mt-4 tabular-nums">
                   {formatPrice(s.price)}
                 </p>
@@ -94,7 +94,7 @@ export default function LandingPage() {
                      transition-colors duration-150
                      focus-visible:outline-none focus-visible:underline"
         >
-          Business owner?
+          Вы владелец бизнеса?
         </Link>
       </footer>
 

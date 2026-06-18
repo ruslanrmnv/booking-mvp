@@ -1,9 +1,9 @@
 import type { Service } from "@/types";
 
 export const SERVICES: Service[] = [
-  { id: "haircut",     name: "Haircut",          duration: 30, price: 2500 },
-  { id: "beard",       name: "Beard Trim",        duration: 20, price: 1500 },
-  { id: "haircut-beard", name: "Haircut + Beard", duration: 45, price: 3500 },
+  { id: "haircut",       name: "Стрижка",          duration: 30, price: 30 },
+  { id: "beard",         name: "Борода",           duration: 15, price: 20 },
+  { id: "haircut-beard", name: "Стрижка + борода", duration: 45, price: 45 },
 ];
 
 // Чистая функция: принимает уже занятые "HH:MM" и возвращает сетку слотов.
@@ -20,6 +20,6 @@ export function buildTimeSlots(bookedTimes: string[]): { time: string; available
   return slots;
 }
 
-export function formatPrice(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
+export function formatPrice(price: number): string {
+  return `${price} ₼`;
 }

@@ -68,7 +68,7 @@ export default function DashboardPage() {
                        focus-visible:ring-amber focus-visible:ring-offset-2
                        focus-visible:ring-offset-ivory"
           >
-            ← Public site
+            ← На сайт
           </Link>
           <button
             onClick={handleLogout}
@@ -78,26 +78,26 @@ export default function DashboardPage() {
                        focus-visible:ring-amber focus-visible:ring-offset-2
                        focus-visible:ring-offset-ivory"
           >
-            Logout
+            Выйти
           </button>
         </div>
       </header>
 
       <div className="max-w-4xl mx-auto py-10 sm:py-12 px-6 sm:px-10">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-espresso mb-8">
-          Dashboard
+          Дашборд
         </h1>
 
         {/* Stats — the dashboard's key figures, in amber */}
         <div className="grid grid-cols-2 gap-4 mb-12">
-          <StatCard label="Total Bookings" value={loadingData ? "—" : String(total)} />
-          <StatCard label="Revenue"        value={loadingData ? "—" : formatPrice(revenue)} />
+          <StatCard label="Всего записей" value={loadingData ? "—" : String(total)} />
+          <StatCard label="Выручка"        value={loadingData ? "—" : formatPrice(revenue)} />
         </div>
 
         {/* Bookings — section heading + single primary action */}
         <div className="flex items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-semibold tracking-tight text-espresso">
-            Upcoming Bookings
+            Ближайшие записи
           </h2>
           <Link
             href="/booking"
@@ -109,17 +109,17 @@ export default function DashboardPage() {
                        focus-visible:ring-amber focus-visible:ring-offset-2
                        focus-visible:ring-offset-ivory"
           >
-            + New booking
+            + Новая запись
           </Link>
         </div>
 
         {loadingData ? (
           <div className="bg-sand rounded-2xl border border-walnut/40 shadow-md p-6">
-            <p className="text-espresso/60 text-sm">Loading…</p>
+            <p className="text-espresso/60 text-sm">Загрузка…</p>
           </div>
         ) : bookings.length === 0 ? (
           <div className="bg-sand rounded-2xl border border-walnut/40 shadow-md p-6">
-            <p className="text-espresso/60 text-sm">No bookings yet.</p>
+            <p className="text-espresso/60 text-sm">Записей пока нет.</p>
           </div>
         ) : (
           <ul className="flex flex-col gap-3">

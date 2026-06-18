@@ -17,9 +17,9 @@ function isoDate(d: Date): string {
 
 /** "Today" / "Tomorrow" / weekday name */
 function dayLabel(offset: number, d: Date): string {
-  if (offset === 0) return "Today";
-  if (offset === 1) return "Tomorrow";
-  return d.toLocaleDateString("en-US", { weekday: "long" });
+  if (offset === 0) return "Сегодня";
+  if (offset === 1) return "Завтра";
+  return d.toLocaleDateString("ru-RU", { weekday: "long" });
 }
 
 /**
@@ -78,7 +78,7 @@ export default function NextOpenSlot() {
   if (loading) {
     return (
       <p className="text-amber text-3xl font-bold mt-1 tabular-nums" aria-busy="true">
-        Checking…
+        Проверяем…
       </p>
     );
   }
@@ -86,7 +86,7 @@ export default function NextOpenSlot() {
   if (!slot) {
     return (
       <p className="text-espresso text-2xl font-bold mt-1">
-        No openings in the next {MAX_DAYS} days
+        Нет свободных мест в ближайшие {MAX_DAYS} дней
       </p>
     );
   }

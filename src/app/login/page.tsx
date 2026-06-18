@@ -20,7 +20,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      setError(error.message);
+      setError("Неверный email или пароль");
       setLoading(false);
       return;
     }
@@ -35,7 +35,7 @@ export default function LoginPage() {
           {BUSINESS_NAME}
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-espresso mb-8 text-center">
-          Sign in
+          Вход
         </h1>
 
         <form onSubmit={handleLogin} className="bg-sand rounded-2xl border border-walnut/40 shadow-md p-6 space-y-4">
@@ -78,7 +78,7 @@ export default function LoginPage() {
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber
                        focus-visible:ring-offset-2 focus-visible:ring-offset-sand"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Вход…" : "Вход"}
           </button>
         </form>
       </div>

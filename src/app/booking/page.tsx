@@ -51,7 +51,7 @@ export default function BookingPage() {
         service:      selectedService.name,
         booking_time: `${selectedDate}T${selectedTime}:00`,
       }]);
-      if (error) { setErrorMsg("Couldn't save your booking — please try again."); return; }
+      if (error) { setErrorMsg("Не удалось сохранить запись — попробуйте ещё раз."); return; }
       setSubmitted(true);
     } finally {
       setLoading(false);
@@ -71,7 +71,7 @@ export default function BookingPage() {
 
         <main className="flex-1 flex items-center justify-center px-6 py-12">
           <p className="sr-only" role="status">
-            Booking confirmed for {selectedService?.name} on {selectedDate} at {selectedTime}.
+            Запись подтверждена: {selectedService?.name}, {selectedDate} в {selectedTime}.
           </p>
 
           <div className="w-full max-w-md text-center">
@@ -85,10 +85,10 @@ export default function BookingPage() {
             </div>
 
             <h1 className="text-espresso text-3xl sm:text-4xl font-bold tracking-tight mt-6">
-              Booking confirmed
+              Запись подтверждена
             </h1>
             <p className="text-espresso/70 text-base mt-2">
-              We&apos;ll confirm shortly by email.
+              Мы пришлём подтверждение на email.
             </p>
 
             {/* Summary — same clean, borderless layout as Review */}
@@ -104,7 +104,7 @@ export default function BookingPage() {
                 {formatBookingDate(selectedDate)} · {selectedTime}
               </p>
               <p className="text-espresso/70 text-sm mt-8">
-                Booking for {form.name} · {form.email}
+                Запись на имя {form.name} · {form.email}
                 {form.phone.trim() && ` · ${form.phone.trim()}`}
               </p>
             </div>
@@ -121,7 +121,7 @@ export default function BookingPage() {
                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber
                              focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
                 >
-                  <CalendarIcon /> Add to calendar
+                  <CalendarIcon /> Добавить в календарь
                 </a>
                 <a
                   href={cal.google}
@@ -144,7 +144,7 @@ export default function BookingPage() {
                          hover:text-espresso/80 transition-colors duration-150
                          focus-visible:outline-none focus-visible:underline"
             >
-              Back to home
+              На главную
             </Link>
           </div>
         </main>
@@ -169,7 +169,7 @@ export default function BookingPage() {
           {step === "service" && (
             <div>
               <h1 className="text-espresso text-3xl sm:text-4xl font-bold tracking-tight mb-8">
-                Choose a service
+                Выберите услугу
               </h1>
 
               <div className="space-y-3">
@@ -189,7 +189,7 @@ export default function BookingPage() {
                              transition-colors duration-150
                              focus-visible:outline-none focus-visible:underline"
                 >
-                  Business owner?
+                  Вы владелец бизнеса?
                 </Link>
               </p>
             </div>
@@ -204,7 +204,7 @@ export default function BookingPage() {
               />
 
               <h1 className="text-espresso text-3xl sm:text-4xl font-bold tracking-tight mb-6">
-                Pick a date &amp; time
+                Выберите дату и время
               </h1>
 
               {/* Custom date strip — no native input */}
@@ -217,7 +217,7 @@ export default function BookingPage() {
               {selectedDate && (
                 <div className="mt-8">
                   {slotsLoading
-                    ? <p className="text-espresso/70 text-sm">Loading…</p>
+                    ? <p className="text-espresso/70 text-sm">Загрузка…</p>
                     : <SlotGrid slots={slots} selected={selectedTime} onSelect={setSelectedTime} />
                   }
                 </div>
@@ -227,9 +227,9 @@ export default function BookingPage() {
                 <PrimaryBtn
                   disabled={!selectedDate || !selectedTime}
                   onClick={() => setStep("details")}
-                  helper={!selectedDate ? "Choose a date to continue" : "Select a time to continue"}
+                  helper={!selectedDate ? "Выберите дату, чтобы продолжить" : "Выберите время, чтобы продолжить"}
                 >
-                  Continue
+                  Продолжить
                 </PrimaryBtn>
                 <BackBtn onClick={() => setStep("service")} />
               </div>
@@ -246,13 +246,13 @@ export default function BookingPage() {
               />
 
               <h1 className="text-espresso text-3xl sm:text-4xl font-bold tracking-tight mb-6">
-                Your details
+                Ваши данные
               </h1>
 
               <div className="space-y-3">
                 <input
                   type="text"
-                  placeholder="Your name"
+                  placeholder="Ваше имя"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full bg-sand text-espresso placeholder:text-espresso/70
@@ -262,7 +262,7 @@ export default function BookingPage() {
                 />
                 <input
                   type="email"
-                  placeholder="Email address"
+                  placeholder="Email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="w-full bg-sand text-espresso placeholder:text-espresso/70
@@ -272,7 +272,7 @@ export default function BookingPage() {
                 />
                 <input
                   type="tel"
-                  placeholder="Phone number"
+                  placeholder="Номер телефона"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   className="w-full bg-sand text-espresso placeholder:text-espresso/70
@@ -282,16 +282,16 @@ export default function BookingPage() {
                 />
               </div>
               <p className="text-espresso/70 text-xs mt-2">
-                We&apos;ll text you an appointment reminder.
+                Мы отправим вам SMS-напоминание о визите.
               </p>
 
               <div className="mt-10 space-y-1">
                 <PrimaryBtn
                   disabled={!form.name.trim() || !form.email.trim() || !form.phone.trim()}
                   onClick={() => setStep("confirm")}
-                  helper="Enter your name, email, and phone number to continue"
+                  helper="Укажите имя, email и номер телефона, чтобы продолжить"
                 >
-                  Review booking
+                  К подтверждению
                 </PrimaryBtn>
                 <BackBtn onClick={() => setStep("datetime")} />
               </div>
@@ -302,7 +302,7 @@ export default function BookingPage() {
           {step === "confirm" && selectedService && (
             <div>
               <h1 className="text-espresso text-3xl sm:text-4xl font-bold tracking-tight mb-8">
-                Review &amp; confirm
+                Проверка и подтверждение
               </h1>
 
               {/* Borderless review block — no box, no table rows */}
@@ -318,12 +318,12 @@ export default function BookingPage() {
                   {formatBookingDate(selectedDate)} · {selectedTime}
                 </p>
                 <p className="text-espresso/70 text-xs mt-1">
-                  {selectedService.duration} min
+                  {selectedService.duration} мин
                 </p>
 
                 {/* Vertical gap, no border line */}
                 <p className="text-espresso/70 text-sm mt-9">
-                  Booking for {form.name} · {form.email}
+                  Запись на имя {form.name} · {form.email}
                   {form.phone.trim() && ` · ${form.phone.trim()}`}
                 </p>
               </div>
@@ -334,7 +334,7 @@ export default function BookingPage() {
 
               <div className="mt-10 space-y-1">
                 <PrimaryBtn onClick={handleSubmit} disabled={loading}>
-                  {loading ? "Booking…" : "Confirm booking"}
+                  {loading ? "Сохранение…" : "Подтвердить запись"}
                 </PrimaryBtn>
                 <BackBtn onClick={() => setStep("details")} />
               </div>
@@ -366,7 +366,7 @@ function ServiceCard({ service, onSelect }: { service: Service; onSelect: () => 
         <p className="text-espresso font-medium text-base leading-snug">
           {service.name}
         </p>
-        <p className="text-espresso/70 text-sm mt-0.5">{service.duration} min</p>
+        <p className="text-espresso/70 text-sm mt-0.5">{service.duration} мин</p>
       </div>
       {/* Price — important numeric value, amber */}
       <span className="text-amber text-xl font-bold tabular-nums shrink-0">
@@ -395,7 +395,7 @@ function StepSummary({
           <span className="text-espresso tabular-nums">{formatPrice(service.price)}</span>
         </p>
         <p className="text-espresso/70 text-sm mt-0.5">
-          {dateTime ? dateTime : `${service.duration} min`}
+          {dateTime ? dateTime : `${service.duration} мин`}
         </p>
       </div>
       <button
@@ -404,7 +404,7 @@ function StepSummary({
                    hover:text-espresso transition-colors duration-150
                    focus-visible:outline-none focus-visible:underline"
       >
-        Change
+        Изменить
       </button>
     </div>
   );
@@ -426,7 +426,7 @@ function DateStrip({
     const iso = d.toISOString().split("T")[0];
     return {
       iso,
-      weekday: d.toLocaleDateString("en", { weekday: "short" }),
+      weekday: d.toLocaleDateString("ru-RU", { weekday: "short" }),
       date:    d.getDate(),
     };
   });
@@ -499,7 +499,7 @@ function ScrollArrow({
     <button
       type="button"
       onClick={onClick}
-      aria-label={direction === "left" ? "Show earlier dates" : "Show later dates"}
+      aria-label={direction === "left" ? "Показать более ранние даты" : "Показать более поздние даты"}
       className="shrink-0 w-9 h-9 rounded-full bg-sand text-espresso/70
                  hidden md:flex items-center justify-center
                  hover:bg-walnut/15 hover:text-espresso transition-colors duration-150
@@ -532,20 +532,20 @@ function SlotGrid({
   const pm = slots.filter((s) => parseInt(s.time) >= 12);
 
   if (!slots.length) {
-    return <p className="text-espresso/70 text-sm">No slots available on this day.</p>;
+    return <p className="text-espresso/70 text-sm">На эту дату нет свободного времени.</p>;
   }
 
   return (
     <div className="space-y-6">
       {am.length > 0 && (
         <div>
-          <p className="text-espresso/70 text-xs font-medium mb-2.5">Morning</p>
+          <p className="text-espresso/70 text-xs font-medium mb-2.5">Утро</p>
           <SlotRow slots={am} selected={selected} onSelect={onSelect} />
         </div>
       )}
       {pm.length > 0 && (
         <div>
-          <p className="text-espresso/70 text-xs font-medium mb-2.5">Afternoon</p>
+          <p className="text-espresso/70 text-xs font-medium mb-2.5">День</p>
           <SlotRow slots={pm} selected={selected} onSelect={onSelect} />
         </div>
       )}
@@ -634,7 +634,7 @@ function BackBtn({ onClick }: { onClick: () => void }) {
                  hover:text-espresso/70 transition-colors duration-150
                  focus-visible:outline-none focus-visible:underline"
     >
-      Back
+      Назад
     </button>
   );
 }
@@ -643,7 +643,7 @@ function BackBtn({ onClick }: { onClick: () => void }) {
 function formatBookingDate(iso: string): string {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+  return new Date(y, m - 1, d).toLocaleDateString("ru-RU", {
     weekday: "long",
     month:   "long",
     day:     "numeric",
@@ -669,7 +669,7 @@ function BookingHeader({ step, total = 5 }: { step: number; total?: number }) {
             {BUSINESS_NAME}
           </Link>
           <span className="text-espresso/70 text-sm font-medium tabular-nums shrink-0">
-            Step {step} of {total}
+            Шаг {step} из {total}
           </span>
         </div>
         <div
@@ -720,8 +720,8 @@ function buildCalendarLinks(service: Service, dateISO: string, timeHM: string) {
 
   const startStr = fmt(start);
   const endStr = fmt(end);
-  const title = `${service.name} at ${BUSINESS_NAME}`;
-  const details = `Your ${service.name} appointment at ${BUSINESS_NAME}.`;
+  const title = `${service.name} в ${BUSINESS_NAME}`;
+  const details = `Ваша запись на ${service.name} в ${BUSINESS_NAME}.`;
 
   const ics =
     "data:text/calendar;charset=utf8," +
