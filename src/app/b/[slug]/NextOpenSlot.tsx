@@ -28,7 +28,7 @@ function dayLabel(offset: number, d: Date): string {
  * excluding times already taken (get_booked_times RPC) and, for today, times that
  * have already passed.
  */
-export default function NextOpenSlot() {
+export default function NextOpenSlot({ businessId }: { businessId: string }) {
   const [slot, setSlot]       = useState<{ label: string; time: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,7 +45,10 @@ export default function NextOpenSlot() {
         d.setDate(d.getDate() + offset);
         const date = isoDate(d);
 
-        const { data } = await supabase.rpc("get_booked_times", { p_date: date });
+        const { data } = await supabase.rpc("get_booked_times", {
+          p_business_id: businessId,
+          p_date: date,
+        });
         const bookedTimes = (data ?? []).map(
           (r: { booking_time: string }) => r.booking_time.substring(11, 16)
         );
@@ -73,7 +76,7 @@ export default function NextOpenSlot() {
 
     findSlot();
     return () => { cancelled = true; };
-  }, []);
+  }, [businessId]);
 
   if (loading) {
     return (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { SERVICES, formatPrice } from "@/lib/mock-data";
+import { formatPrice } from "@/lib/mock-data";
 import { BUSINESS_NAME } from "@/lib/site";
 import { supabase } from "@/lib/supabase";
 
@@ -17,15 +17,12 @@ type SupabaseBooking = {
   booking_time: string;  // ISO-строка, e.g. "2026-06-18T10:00:00"
 };
 
-// Цену ищем по названию услуги, не по ID
-function getPriceByName(serviceName: string): number {
-  return SERVICES.find((s) => s.name === serviceName)?.price ?? 0;
-}
-
-
 export default function DashboardPage() {
   const router = useRouter();
   const [bookings, setBookings] = useState<SupabaseBooking[]>([]);
+  const [businessName, setBusinessName] = useState(BUSINESS_NAME);
+  // Цены услуг этого бизнеса (название → цена) для подсчёта выручки.
+  const [priceByName, setPriceByName] = useState<Record<string, number>>({});
   const [loadingData, setLoadingData] = useState(true);
 
   async function handleLogout() {
@@ -34,21 +31,45 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    async function fetchBookings() {
-      const { data } = await supabase
+    async function fetchData() {
+      // Бизнес владельца (один бизнес на владельца).
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoadingData(false); return; }
+
+      const { data: business } = await supabase
+        .from("businesses")
+        .select("id, name")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
+      if (!business) { setLoadingData(false); return; }
+      setBusinessName(business.name);
+
+      // Услуги бизнеса → карта цен по названию.
+      const { data: services } = await supabase
+        .from("services")
+        .select("name, price")
+        .eq("business_id", business.id);
+      const map: Record<string, number> = {};
+      (services ?? []).forEach((s) => { map[s.name] = s.price; });
+      setPriceByName(map);
+
+      // Записи только этого бизнеса (RLS дополнительно ограничивает доступ).
+      const { data: rows } = await supabase
         .from("bookings")
         .select("*")
+        .eq("business_id", business.id)
         .order("booking_time", { ascending: true });
 
-      setBookings(data ?? []);
+      setBookings(rows ?? []);
       setLoadingData(false);
     }
 
-    fetchBookings();
+    fetchData();
   }, []);
 
   const total = bookings.length;
-  const revenue = bookings.reduce((sum, b) => sum + getPriceByName(b.service), 0);
+  const revenue = bookings.reduce((sum, b) => sum + (priceByName[b.service] ?? 0), 0);
 
   return (
     <div className="min-h-screen bg-ivory text-espresso">
@@ -57,7 +78,7 @@ export default function DashboardPage() {
                          px-6 sm:px-10 h-16 border-b border-walnut/15
                          bg-ivory/95 backdrop-blur-sm">
         <span className="text-espresso text-lg font-semibold tracking-tight">
-          {BUSINESS_NAME}
+          {businessName}
         </span>
         <div className="flex items-center gap-6">
           <Link

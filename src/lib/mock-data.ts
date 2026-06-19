@@ -1,10 +1,5 @@
-import type { Service } from "@/types";
-
-export const SERVICES: Service[] = [
-  { id: "haircut",       name: "Стрижка",          duration: 30, price: 30 },
-  { id: "beard",         name: "Борода",           duration: 15, price: 20 },
-  { id: "haircut-beard", name: "Стрижка + борода", duration: 45, price: 45 },
-];
+// Услуги теперь живут в БД (таблица services, по бизнесу). Здесь остаются
+// только чистые хелперы, используемые во всём флоу бронирования.
 
 // Чистая функция: принимает уже занятые "HH:MM" и возвращает сетку слотов.
 // Используется в /booking для реальных данных из Supabase.

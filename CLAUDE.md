@@ -2,9 +2,10 @@
 
 ## Overview
 BarberBook is a booking platform MVP for service businesses (starting with 
-barbershops, salons). Currently single-tenant — built for one business, with 
-the architecture deliberately kept open to extend to multi-tenant later, but 
-NOT built as multi-tenant yet (see Architecture Decisions below).
+barbershops, salons). Multi-tenant via slug-based routing — each business has 
+its own public pages at `/b/[slug]`. In practice one business exists today 
+(`barberbook`), but data (businesses, services, bookings) is fully 
+per-business. See Architecture Decisions for what is and isn't built.
 
 ## Tech Stack
 - Frontend: Next.js 16.2.9 (App Router), TypeScript, Tailwind CSS 3.4
@@ -31,39 +32,57 @@ no fake/non-real data visualizations. Cards over bordered table-rows. One
 dominant primary action per screen. Generous whitespace.
 
 ## Routes & Key Files
-- `/` — src/app/page.tsx + src/app/NextOpenSlot.tsx (client) — customer 
-  landing: hero, live "next open slot" (real computed value, not hardcoded), 
-  services list
-- `/booking` — src/app/booking/page.tsx (client) — 4-step flow (service → 
-  date/time → details → review) + success screen. Sub-components inline: 
-  ServiceCard, StepSummary, DateStrip + ScrollArrow, SlotGrid/SlotRow, 
-  PrimaryBtn, BackBtn, formatBookingDate
+- `/b/[slug]/layout.tsx` — server 404 guard: loads the business by slug, 
+  notFound() if missing. Pages re-read the same business via getBusinessBySlug 
+  (cache()-deduped per request) — layouts can't pass props to child pages.
+- `/b/[slug]` — src/app/b/[slug]/page.tsx (server) + ./NextOpenSlot.tsx 
+  (client) — customer landing: hero, live "next open slot" (real computed 
+  value, not hardcoded), services list. Business name + services read from DB.
+- `/b/[slug]/booking` — src/app/b/[slug]/booking/page.tsx (server) loads 
+  business + services and renders ./BookingFlow.tsx (client) — the 4-step flow 
+  (service → date/time → details → review) + success screen. Sub-components 
+  inline in BookingFlow: ServiceCard, StepSummary, DateStrip + ScrollArrow, 
+  SlotGrid/SlotRow, PrimaryBtn, BackBtn, BookingHeader, formatBookingDate.
+- `/` and `/booking` — src/app/page.tsx, src/app/booking/page.tsx — thin 
+  redirects to `/b/barberbook` and `/b/barberbook/booking` (primary business).
 - `/login` — src/app/login/page.tsx — Supabase password auth
-- `/dashboard` — src/app/dashboard/page.tsx — bookings list + stats, 
-  protected by middleware
-- src/lib/mock-data.ts — SERVICES, buildTimeSlots (09:00–17:00, 30-min slots), 
-  formatPrice, MOCK_BOOKINGS (has a known pre-existing harmless type error — 
-  out of scope, do not fix unless explicitly asked)
-- src/lib/supabase.ts — browser client via createBrowserClient (@supabase/ssr)
+- `/dashboard` — src/app/dashboard/page.tsx — bookings list + stats, scoped to 
+  the owner's business (businesses.owner_id = auth.uid()); protected by proxy
+- src/lib/business.ts — getBusinessBySlug, getServices — cache()-wrapped 
+  server reads of businesses/services via the anon server client.
+- src/lib/mock-data.ts — buildTimeSlots (09:00–17:00, 30-min slots), 
+  formatPrice. (Services now live in the DB, not here.)
+- src/lib/supabase.ts — browser client (createBrowserClient) + 
+  createServerSupabase() (anon, empty cookies) for public server-side reads.
+- src/lib/site.ts — BUSINESS_NAME, generic app-brand fallback (login, root 
+  layout metadata, dashboard initial state). Customer-facing name comes from DB.
 - src/types/index.ts — Service, Booking, TimeSlot
 - src/proxy.ts — protects /dashboard, redirects to /login if no session; 
-  `/` and `/booking` are public (Next.js 16 `proxy` convention, formerly 
-  `middleware.ts`)
+  `/b/[slug]`, `/`, `/booking` are public (Next.js 16 `proxy` convention, 
+  formerly `middleware.ts`)
 
 ## Database & Security
+Table `businesses`: id (uuid, PK), created_at, slug (text, unique), name 
+(text), owner_id (uuid → auth.users; how /dashboard scopes to one business).
+Table `services`: id (uuid, PK), business_id (uuid → businesses), name (text), 
+duration (int, minutes), price (int, AZN), sort_order (int).
 Table `bookings`: id (uuid, PK), created_at (timestamptz, default now()), 
-name (text), service (text), booking_time (timestamptz), email (text).
+name (text), service (text — service name, not id), booking_time (timestamptz), 
+email (text), phone (text, nullable), business_id (uuid → businesses, NOT NULL).
 
-RLS is enabled. Policies:
-- anon_insert: INSERT, role anon, with_check true
-- authenticated_insert: INSERT, role authenticated
-- authenticated_select: SELECT, role authenticated
+RLS is enabled on all three. Policies:
+- businesses / services: public SELECT (anon + authenticated) — needed so the 
+  public /b/[slug] pages can load name + services.
+- bookings anon_insert: INSERT, role anon, with_check business_id ∈ businesses
+- bookings authenticated_insert: INSERT, with_check business_id is owner's
+- bookings authenticated_select: SELECT, scoped to the owner's business 
+  (business_id where businesses.owner_id = auth.uid())
 
-RPC function `get_booked_times(p_date date)` — SECURITY DEFINER, returns 
-ONLY booking_time for that date. Used by anon clients to check slot 
-availability without exposing other customers' name/email. The booking 
-flow's availability check MUST always go through this RPC, never a direct 
-SELECT on bookings from an anon context.
+RPC function `get_booked_times(p_business_id uuid, p_date date)` — SECURITY 
+DEFINER, returns ONLY booking_time for that business+date. Used by anon clients 
+to check slot availability without exposing other customers' name/email. The 
+booking flow's availability check MUST always go through this RPC, never a 
+direct SELECT on bookings from an anon context.
 
 Never use or request the service_role key in any agent context. Schema 
 changes (new columns, policies, etc.) are applied manually by the project 
@@ -71,9 +90,11 @@ owner via the Supabase SQL Editor — propose the SQL, don't try to execute it
 yourself.
 
 ## Architecture Decisions — Do NOT Do These Without Explicit Request
-- No multi-tenant infrastructure (no tenant_id, no slug routing, no per-tenant 
-  config/branding system). This is deliberately deferred until there is a 
-  real second business or an explicit decision to build a demo.
+- Multi-tenancy is built at the data + routing layer (businesses/services 
+  tables, business_id on bookings, /b/[slug] routing). But: one business per 
+  owner (no business switcher UI), services are seeded via SQL only (no 
+  dashboard CRUD), and there is NO per-tenant branding/config system. Don't 
+  build those without an explicit request.
 - No B2B marketing site, pricing tiers, or onboarding funnel.
 - No booking "status"/cancellation field — there is no UI mechanism to use 
   it yet. Don't add half-built features (a field with no way to act on it).
@@ -114,5 +135,8 @@ hover/selected states — WITHOUT a "manage/cancel booking" link, since no
 cancellation mechanism exists) — in progress.
 Phase 5 (accessibility: WCAG AA contrast, touch target sizes, mobile pass) — 
 next after Phase 2.
-Phase 3 (multi-tenancy) and Phase 4 (B2B acquisition funnel) — explicitly 
-deferred, do not start without explicit go-ahead.
+Phase 3 (multi-tenancy) — data + routing layer done (slug routing, 
+per-business services/bookings). Owner-facing tooling (service CRUD, business 
+switcher, per-tenant branding) NOT built — see Architecture Decisions.
+Phase 4 (B2B acquisition funnel) — explicitly deferred, do not start without 
+explicit go-ahead.
