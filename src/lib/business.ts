@@ -6,6 +6,8 @@ export type Business = {
   id: string;
   slug: string;
   name: string;
+  open_time: string;   // "HH:MM"
+  close_time: string;  // "HH:MM"
 };
 
 // cache() дедуплицирует вызов в пределах одного запроса: layout (404-гард) и
@@ -15,10 +17,16 @@ export const getBusinessBySlug = cache(
     const supabase = createServerSupabase();
     const { data } = await supabase
       .from("businesses")
-      .select("id, slug, name")
+      .select("id, slug, name, open_time, close_time")
       .eq("slug", slug)
       .maybeSingle();
-    return data ?? null;
+    if (!data) return null;
+    // Postgres time → "HH:MM:SS"; нормализуем к "HH:MM".
+    return {
+      ...data,
+      open_time: data.open_time.substring(0, 5),
+      close_time: data.close_time.substring(0, 5),
+    };
   }
 );
 

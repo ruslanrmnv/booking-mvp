@@ -53,7 +53,11 @@ export default async function LandingPage({
           {/* Next open slot — single primary CTA per screen */}
           <div className="mt-10 bg-sand rounded-2xl border border-walnut/40 shadow-md p-6 sm:p-8 max-w-md">
             <p className="text-espresso/70 text-sm">Ближайшее свободное время</p>
-            <NextOpenSlot businessId={business.id} />
+            <NextOpenSlot
+              businessId={business.id}
+              openTime={business.open_time}
+              closeTime={business.close_time}
+            />
             <p className="text-espresso/70 text-sm mt-1">~45 мин · без ожидания</p>
 
             <Link

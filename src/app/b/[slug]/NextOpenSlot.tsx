@@ -28,7 +28,15 @@ function dayLabel(offset: number, d: Date): string {
  * excluding times already taken (get_booked_times RPC) and, for today, times that
  * have already passed.
  */
-export default function NextOpenSlot({ businessId }: { businessId: string }) {
+export default function NextOpenSlot({
+  businessId,
+  openTime,
+  closeTime,
+}: {
+  businessId: string;
+  openTime: string;
+  closeTime: string;
+}) {
   const [slot, setSlot]       = useState<{ label: string; time: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +61,7 @@ export default function NextOpenSlot({ businessId }: { businessId: string }) {
           (r: { booking_time: string }) => r.booking_time.substring(11, 16)
         );
 
-        const slots = buildTimeSlots(bookedTimes);
+        const slots = buildTimeSlots(bookedTimes, openTime, closeTime);
         // "HH:MM" zero-padded → lexical comparison is chronological.
         const candidate = slots.find(
           (s) => s.available && (offset > 0 || s.time > nowHM)
@@ -76,7 +84,7 @@ export default function NextOpenSlot({ businessId }: { businessId: string }) {
 
     findSlot();
     return () => { cancelled = true; };
-  }, [businessId]);
+  }, [businessId, openTime, closeTime]);
 
   if (loading) {
     return (

@@ -39,6 +39,19 @@ function draftDirty(d: Draft, s: ServiceRow): boolean {
   );
 }
 
+// Настройки бизнеса: название + рабочие часы. open/close — "HH:MM".
+type BizDraft = { name: string; open: string; close: string };
+const EMPTY_BIZ: BizDraft = { name: "", open: "", close: "" };
+
+function bizValid(d: BizDraft): boolean {
+  // Лексическое сравнение "HH:MM" совпадает с хронологическим порядком.
+  return d.name.trim() !== "" && d.open !== "" && d.close !== "" && d.open < d.close;
+}
+
+function bizDirty(d: BizDraft, s: BizDraft): boolean {
+  return d.name.trim() !== s.name || d.open !== s.open || d.close !== s.close;
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [businessId, setBusinessId] = useState<string | null>(null);
@@ -46,6 +59,12 @@ export default function SettingsPage() {
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [loading, setLoading] = useState(true);
+
+  // Настройки бизнеса (название + часы): черновик + сохранённый снимок.
+  const [bizSaved, setBizSaved] = useState<BizDraft>(EMPTY_BIZ);
+  const [bizDraft, setBizDraft] = useState<BizDraft>(EMPTY_BIZ);
+  const [bizSaving, setBizSaving] = useState(false);
+  const [bizSavedFlag, setBizSavedFlag] = useState(false);
 
   // Per-row action state
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -88,13 +107,21 @@ export default function SettingsPage() {
 
       const { data: business } = await supabase
         .from("businesses")
-        .select("id, name")
+        .select("id, name, open_time, close_time")
         .eq("owner_id", user.id)
         .maybeSingle();
 
       if (!business) { setLoading(false); return; }
       setBusinessId(business.id);
       setBusinessName(business.name);
+      // Postgres time → "HH:MM:SS"; нормализуем к "HH:MM" для <input type="time">.
+      const snapshot: BizDraft = {
+        name: business.name,
+        open: business.open_time.substring(0, 5),
+        close: business.close_time.substring(0, 5),
+      };
+      setBizSaved(snapshot);
+      setBizDraft(snapshot);
       await fetchServices(business.id);
       setLoading(false);
     }
@@ -191,6 +218,35 @@ export default function SettingsPage() {
     await fetchServices(businessId);
   }
 
+  function updateBizDraft(patch: Partial<BizDraft>) {
+    setBizDraft((prev) => ({ ...prev, ...patch }));
+    setBizSavedFlag(false);
+  }
+
+  async function handleSaveBusiness() {
+    if (!businessId || bizSaving || !bizValid(bizDraft) || !bizDirty(bizDraft, bizSaved)) return;
+    setErrorMsg("");
+    setBizSaving(true);
+    const { error } = await supabase
+      .from("businesses")
+      .update({
+        name: bizDraft.name.trim(),
+        open_time: bizDraft.open,
+        close_time: bizDraft.close,
+      })
+      .eq("id", businessId);
+    setBizSaving(false);
+    if (error) {
+      setErrorMsg("Не удалось сохранить настройки бизнеса — попробуйте ещё раз.");
+      return;
+    }
+    const snapshot: BizDraft = { name: bizDraft.name.trim(), open: bizDraft.open, close: bizDraft.close };
+    setBizSaved(snapshot);
+    setBizDraft(snapshot);
+    setBusinessName(snapshot.name); // обновляем шапку
+    setBizSavedFlag(true);
+  }
+
   const inputClass =
     "w-full bg-ivory text-espresso placeholder:text-espresso/50 text-base " +
     "px-4 py-3 rounded-xl border border-walnut/20 focus:outline-none " +
@@ -231,14 +287,83 @@ export default function SettingsPage() {
 
       <div className="max-w-4xl mx-auto py-10 sm:py-12 px-6 sm:px-10">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-espresso mb-8">
-          Услуги
+          Настройки
         </h1>
 
         {errorMsg && (
           <p className="text-oxblood text-sm mb-6" role="status">{errorMsg}</p>
         )}
 
+        {/* ── Business: name + working hours ─────────────────────────────── */}
+        <h2 className="text-2xl font-semibold tracking-tight text-espresso mb-6">
+          Бизнес
+        </h2>
+        {loading ? (
+          <div className="bg-sand rounded-2xl border border-walnut/40 shadow-md p-6 mb-12">
+            <p className="text-espresso/60 text-sm">Загрузка…</p>
+          </div>
+        ) : (
+          <div className="bg-sand rounded-2xl border border-walnut/40 shadow-md p-5 flex flex-col gap-4 mb-12">
+            <label className="block">
+              <span className="text-espresso/70 text-xs font-medium block mb-1">Название</span>
+              <input
+                type="text"
+                value={bizDraft.name}
+                onChange={(e) => updateBizDraft({ name: e.target.value })}
+                className={inputClass}
+              />
+            </label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <label className="sm:w-40">
+                <span className="text-espresso/70 text-xs font-medium block mb-1">Открытие</span>
+                <input
+                  type="time"
+                  value={bizDraft.open}
+                  onChange={(e) => updateBizDraft({ open: e.target.value })}
+                  className={`${inputClass} tabular-nums`}
+                />
+              </label>
+              <label className="sm:w-40">
+                <span className="text-espresso/70 text-xs font-medium block mb-1">Закрытие</span>
+                <input
+                  type="time"
+                  value={bizDraft.close}
+                  onChange={(e) => updateBizDraft({ close: e.target.value })}
+                  className={`${inputClass} tabular-nums`}
+                />
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              {bizDraft.open !== "" && bizDraft.close !== "" && bizDraft.open >= bizDraft.close && (
+                <span className="text-oxblood text-xs mr-auto">
+                  Время закрытия должно быть позже открытия.
+                </span>
+              )}
+              {bizSavedFlag && !bizDirty(bizDraft, bizSaved) && (
+                <span className="text-espresso/60 text-xs" role="status">Сохранено</span>
+              )}
+              <button
+                onClick={handleSaveBusiness}
+                disabled={!bizDirty(bizDraft, bizSaved) || !bizValid(bizDraft) || bizSaving}
+                className="shrink-0 bg-amber text-ivory text-sm font-semibold
+                           px-5 py-2.5 rounded-xl
+                           hover:bg-amber/90 transition-colors duration-150
+                           disabled:bg-walnut/20 disabled:text-espresso/45 disabled:cursor-not-allowed
+                           focus-visible:outline-none focus-visible:ring-2
+                           focus-visible:ring-amber focus-visible:ring-offset-2
+                           focus-visible:ring-offset-sand"
+              >
+                {bizSaving ? "Сохранение…" : "Сохранить"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── Current services ───────────────────────────────────────────── */}
+        <h2 className="text-2xl font-semibold tracking-tight text-espresso mb-6">
+          Услуги
+        </h2>
         {loading ? (
           <div className="bg-sand rounded-2xl border border-walnut/40 shadow-md p-6">
             <p className="text-espresso/60 text-sm">Загрузка…</p>

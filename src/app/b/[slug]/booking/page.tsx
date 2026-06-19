@@ -20,6 +20,8 @@ export default async function BookingPage({
       businessId={business.id}
       businessName={business.name}
       services={services}
+      openTime={business.open_time}
+      closeTime={business.close_time}
     />
   );
 }

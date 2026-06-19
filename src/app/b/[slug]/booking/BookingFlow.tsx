@@ -14,11 +14,15 @@ export default function BookingFlow({
   businessId,
   businessName,
   services,
+  openTime,
+  closeTime,
 }: {
   slug: string;
   businessId: string;
   businessName: string;
   services: Service[];
+  openTime: string;
+  closeTime: string;
 }) {
   const [step, setStep]                       = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -43,11 +47,11 @@ export default function BookingFlow({
       const bookedTimes = (data ?? []).map(
         (r: { booking_time: string }) => r.booking_time.substring(11, 16)
       );
-      setSlots(buildTimeSlots(bookedTimes));
+      setSlots(buildTimeSlots(bookedTimes, openTime, closeTime));
       setSlotsLoading(false);
     }
     fetchSlots();
-  }, [selectedDate, businessId]);
+  }, [selectedDate, businessId, openTime, closeTime]);
 
   /* ── Submit ─────────────────────────────────────────────────────────────── */
   async function handleSubmit() {

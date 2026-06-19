@@ -49,12 +49,14 @@ dominant primary action per screen. Generous whitespace.
 - `/dashboard` — src/app/dashboard/page.tsx — bookings list + stats, scoped to 
   the owner's business (businesses.owner_id = auth.uid()); protected by proxy
 - `/dashboard/settings` — src/app/dashboard/settings/page.tsx (client) — owner 
-  CRUD for services (inline edit, add, two-click delete confirm), scoped to the 
-  owner's business; all mutations via browser client under RLS
+  settings: business name + working hours (open/close), and CRUD for services 
+  (inline edit, add, two-click delete confirm), scoped to the owner's business; 
+  all mutations via browser client under RLS
 - src/lib/business.ts — getBusinessBySlug, getServices — cache()-wrapped 
   server reads of businesses/services via the anon server client.
-- src/lib/mock-data.ts — buildTimeSlots (09:00–17:00, 30-min slots), 
-  formatPrice. (Services now live in the DB, not here.)
+- src/lib/mock-data.ts — buildTimeSlots(bookedTimes, openTime, closeTime) — 
+  30-min slots between the business's working hours (close inclusive); defaults 
+  09:00–17:00. formatPrice. (Services + hours now live in the DB, not here.)
 - src/lib/supabase.ts — browser client (createBrowserClient) + 
   createServerSupabase() (anon, empty cookies) for public server-side reads.
 - src/lib/site.ts — BUSINESS_NAME, generic app-brand fallback (login, root 
@@ -66,7 +68,9 @@ dominant primary action per screen. Generous whitespace.
 
 ## Database & Security
 Table `businesses`: id (uuid, PK), created_at, slug (text, unique), name 
-(text), owner_id (uuid → auth.users; how /dashboard scopes to one business).
+(text), owner_id (uuid → auth.users; how /dashboard scopes to one business), 
+open_time (time, default '09:00'), close_time (time, default '17:00') — working 
+hours used to generate booking slots.
 Table `services`: id (uuid, PK), business_id (uuid → businesses), name (text), 
 duration (int, minutes), price (int, AZN), sort_order (int).
 Table `bookings`: id (uuid, PK), created_at (timestamptz, default now()), 
@@ -79,6 +83,8 @@ RLS is enabled on all three. Policies:
 - services owner INSERT/UPDATE/DELETE: role authenticated, scoped to the owner's 
   business (business_id where businesses.owner_id = auth.uid()) — powers 
   /dashboard/settings CRUD.
+- businesses_owner_update: UPDATE, role authenticated, owner_id = auth.uid() — 
+  lets the owner edit name + working hours in /dashboard/settings.
 - bookings anon_insert: INSERT, role anon, with_check business_id ∈ businesses
 - bookings authenticated_insert: INSERT, with_check business_id is owner's
 - bookings authenticated_select: SELECT, scoped to the owner's business 
