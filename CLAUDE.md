@@ -48,6 +48,9 @@ dominant primary action per screen. Generous whitespace.
 - `/login` — src/app/login/page.tsx — Supabase password auth
 - `/dashboard` — src/app/dashboard/page.tsx — bookings list + stats, scoped to 
   the owner's business (businesses.owner_id = auth.uid()); protected by proxy
+- `/dashboard/settings` — src/app/dashboard/settings/page.tsx (client) — owner 
+  CRUD for services (inline edit, add, two-click delete confirm), scoped to the 
+  owner's business; all mutations via browser client under RLS
 - src/lib/business.ts — getBusinessBySlug, getServices — cache()-wrapped 
   server reads of businesses/services via the anon server client.
 - src/lib/mock-data.ts — buildTimeSlots (09:00–17:00, 30-min slots), 
@@ -73,6 +76,9 @@ email (text), phone (text, nullable), business_id (uuid → businesses, NOT NULL
 RLS is enabled on all three. Policies:
 - businesses / services: public SELECT (anon + authenticated) — needed so the 
   public /b/[slug] pages can load name + services.
+- services owner INSERT/UPDATE/DELETE: role authenticated, scoped to the owner's 
+  business (business_id where businesses.owner_id = auth.uid()) — powers 
+  /dashboard/settings CRUD.
 - bookings anon_insert: INSERT, role anon, with_check business_id ∈ businesses
 - bookings authenticated_insert: INSERT, with_check business_id is owner's
 - bookings authenticated_select: SELECT, scoped to the owner's business 
@@ -89,12 +95,20 @@ changes (new columns, policies, etc.) are applied manually by the project
 owner via the Supabase SQL Editor — propose the SQL, don't try to execute it 
 yourself.
 
+## Known Technical Debt
+- Bookings store the service as a text NAME (bookings.service), not a service 
+  id/FK. Revenue on /dashboard is computed by matching that name against the 
+  business's current services. So renaming or deleting a service in 
+  /dashboard/settings breaks the revenue calculation for PAST bookings of that 
+  service (they resolve to 0). Proper fix would be a service_id FK + price 
+  snapshot on the booking row; deferred.
+
 ## Architecture Decisions — Do NOT Do These Without Explicit Request
 - Multi-tenancy is built at the data + routing layer (businesses/services 
-  tables, business_id on bookings, /b/[slug] routing). But: one business per 
-  owner (no business switcher UI), services are seeded via SQL only (no 
-  dashboard CRUD), and there is NO per-tenant branding/config system. Don't 
-  build those without an explicit request.
+  tables, business_id on bookings, /b/[slug] routing). Owners can manage their 
+  own services at /dashboard/settings. But: one business per owner (no business 
+  switcher UI) and NO per-tenant branding/config system. Don't build those 
+  without an explicit request.
 - No B2B marketing site, pricing tiers, or onboarding funnel.
 - No booking "status"/cancellation field — there is no UI mechanism to use 
   it yet. Don't add half-built features (a field with no way to act on it).
@@ -136,7 +150,7 @@ cancellation mechanism exists) — in progress.
 Phase 5 (accessibility: WCAG AA contrast, touch target sizes, mobile pass) — 
 next after Phase 2.
 Phase 3 (multi-tenancy) — data + routing layer done (slug routing, 
-per-business services/bookings). Owner-facing tooling (service CRUD, business 
-switcher, per-tenant branding) NOT built — see Architecture Decisions.
+per-business services/bookings); owner service CRUD done (/dashboard/settings). 
+Business switcher and per-tenant branding NOT built — see Architecture Decisions.
 Phase 4 (B2B acquisition funnel) — explicitly deferred, do not start without 
 explicit go-ahead.
